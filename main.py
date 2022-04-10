@@ -35,7 +35,6 @@ class wordsearch:
         #add diagonal gen chances based off increased difficulty
     
     def validate_pos(self, x, y, d, di, arr):
-        print("I HAVE BEEN CALLED")
         w = d/2
         if w%2 != 0:
             w+=0.5
