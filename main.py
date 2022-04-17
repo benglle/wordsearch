@@ -1,112 +1,115 @@
-from multiprocessing.sharedctypes import Value
-import random as r
+from random import randint, choice
 from colorama import Fore
 
 class wordsearch:
-    
-    def __init__(self,difficulty,dimension,words,dev):
-        self.difficulty = difficulty
-        self.dimension = dimension
+
+    def __init__(self,words,difficulty,dev):
         self.words = words
+        self.difficulty = difficulty
         self.dev = dev
         
-    def pquery(self):
-        if self.dev == True:
-            return ["TESTING" for x in range(5)]
+    def get_words(self):
+        i, words = 0, []
+        if self.dev==True:
+            words = ["TESTING" for x in range(5)]
         else:
-            words = []
-            try:
-                n = int(input("n of words: "))
-                if n < 1 or n >= self.dimension/2: self.pquery()
-            except ValueError:
-                print("you need to input an integer")
-                self.pquery()
-            for i in range(n):
-                word = input(f"Word number {i+1}: ")
-                words.append(word)
-            return words
+            print("enter 'i' to stop")
+            while True:
+                f=False
+                w = input(f"enter word number {i+1}: ")
+                if w=="i" and i>1: break
+                elif f==False and w != "": 
+                    words.append(w)
+                    i+=1
+        return words
 
-    def check_difficulty(self):
+    def validate_pos(self,arr,set):
+        j=False
+        for s in set:
+            if s in arr:
+                j=True
+                break
+        if j: return False
+        else: return True
+
+    def get_difficulty(self):
         if self.difficulty != None:
-            reverse = r.randint(1,100)
+            reverse = randint(1,100)
             if 10*self.difficulty > reverse:
                 return True
             else: return False
-        #add diagonal gen chances based off increased difficulty
-    
-    def validate_pos(self, x, y, d, di, arr):
-        w = d/2
-        if w%2 != 0:
-            w+=0.5
-        w=int(w)
-        v1,e1 = (x-w),(y-w)
-        flag = False
-        if di == "x":
-            lst = []
-            for c in range(d):
-                lst.append(((v1+c),y))
-        elif di == "y":
-            lst = []
-            for c in range(d):
-                lst.append((x,(e1+c)))
-        new_lst = []
-        for a in arr:
-            for x in a:
-                new_lst.append(x)
-        for y in lst:
-            if y in new_lst:
-                flag = True
-        if flag == True: return False
-        else: return True
 
-    def construct_table(self):
-        table = [[] for x in range(self.dimension)]
-        alphabet = [j for j in "abcdefghijklmnopqrstuvwxyz"]#upper()
+    def construct(self):
+        if self.words == None: words = self.get_words()
+        t = [len(j) for j in words]
+        t.sort()
+        total=0
+        for a in t:
+            total+=a
+        longest_word = max(words,key=len)
+        dimension = round(len(longest_word)*1.2+(total/len(words)+len(words)/2))
+        alphabet = [a for a in "abcdefghijklmnopqrstuvwxyz"]
+        table = [[] for m in range(dimension)]
         for t in table:
-            for c in range(self.dimension):
-                t.append(r.choice(alphabet))
-        n = self.dimension
+            for c in range(dimension):
+                t.append(choice(alphabet))
         arr=[]
-        if self.words == None:
-            words = self.pquery()
         for w in words:
-            direction = r.choice(["x","y"])
-            found = False
-            while found==False:
-                x=y=r.randint(0,n)
-                d = len(w)/2
-                if d%2 != 0:
-                    d+=0.5
-                d=int(d)
-                v1,v2 = (x-d),(x+d)
-                e1,e2 = (y-d),(y+d)
-                if direction=="x":
-                    if v1 >= 0 and v2 <= n:
-                        g = self.validate_pos(x,y,len(w),direction,arr)
-                        if g == True: found = True
-                if direction=="y":
-                    if e1 >= 0 and e2 <= n:
-                        g = self.validate_pos(x,y,len(w),direction,arr)
-                        if g == True: found = True
-            if direction=="x":
-                a = self.check_difficulty()
-                lst = []
-                for c in range(len(w)):
-                    if a: table[y][v1+c] = w[-(c+1)]
-                    else: table[y][v1+c] = w[c]
-                    pos=(v1+c,y)
-                    lst.append(pos)
-                arr.append(lst)
-            if direction=="y":
-                a = self.check_difficulty()
-                lst = []
-                for c in range(len(w)):
-                    if a: table[e1+c][x] = w[-(c+1)]
-                    else: table[e1+c][x] = w[c]
-                    pos=(x,(e1+c))
-                    lst.append(pos)
-                arr.append(lst)
-
+            c=choice(["x","y","xy","yx"])#x = -, y = |, xy = \, yx = /
+            f=True
+            f1=True
+            while f: #find a valid pos to place word on table
+                l = len(w)
+                diff = self.get_difficulty()
+                while f1:
+                    x=randint(0,dimension-1)
+                    y=randint(0,dimension-1)
+                    if c=="x" or c=="y" or c=="xy":
+                        if x+l < dimension and y+l < dimension:
+                            f1=False
+                    elif c=="yx":
+                        if x+l < dimension and y-l > 0:
+                            f1=False
+                f1=True
+                set = []
+                if c=="x":
+                    for z in range(l):
+                        pos = (x+z,y)
+                        set.append(pos)
+                    if self.validate_pos(arr,set): 
+                        f=False
+                        for z in range(l):
+                            if diff: table[y][x+z] = w[-(z+1)]
+                            else: table[y][x+z] = w[z]
+                if c=="y":
+                    for z in range(l):
+                        pos = (x,y+z)
+                        set.append(pos)
+                    if self.validate_pos(arr,set): 
+                        f=False
+                        for z in range(l):
+                            if diff: table[y+z][x] = w[-(z+1)]
+                            else: table[y+z][x] = w[z]
+                if c=="xy":
+                    for z in range(l):
+                        pos = (x+z,y+z)
+                        set.append(pos)
+                    if self.validate_pos(arr,set): 
+                        f=False
+                        for z in range(l):
+                            if diff: table[y+z][x+z] = w[-(z+1)]
+                            else: table[y+z][x+z] = w[z]
+                if c=="yx":
+                    for z in range(l):
+                        pos = (x+z,y-(z+1))
+                        set.append(pos)
+                    if self.validate_pos(arr,set): 
+                        f=False
+                        for z in range(l):
+                            if diff: table[y-(z+1)][x+z] = w[-(z+1)]
+                            else: table[y-(z+1)][x+z] = w[z]
+            for s in set:
+                arr.append(s)
         return table
 def print_table(table):
     for t in table:
@@ -116,8 +119,7 @@ def print_table(table):
             else:
                 print(Fore.BLUE + f"{x}  ",end='')
         print()
-    print("\n\n")
-
-myTable = wordsearch(5,20,None,True)
-table = myTable.construct_table()
-print_table(table)
+    print("\n\n")   
+table = wordsearch(None,5,False)#difficulty between 1 - 10, increases chances of reverse
+myTable = table.construct()
+print_table(myTable)
