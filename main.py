@@ -120,6 +120,7 @@ def print_table(table):
                 print(Fore.BLUE + f"{x}  ",end='')
         print()
     print("\n\n")   
-table = wordsearch(None,5,False)#difficulty between 1 - 10, increases chances of reverse
-myTable = table.construct()
-print_table(myTable)
+if __name__ == '__main__':
+    table = wordsearch(None,5,False)#difficulty between 1 - 10, increases chances of reverse
+    myTable = table.construct()
+    print_table(myTable)
